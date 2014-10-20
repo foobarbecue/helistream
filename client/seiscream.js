@@ -55,8 +55,88 @@ getTraceData = function(message){
         };
 }
 
-plotTraceData = function(message){
-    var messageData = getTraceData(message);
+extent = function(msgCursor){
+    // Given msgCursor, a cursor to a set of earthworm messages, returns the earliest startdate and latest enddate
+
+}
+
+plotMsgs = function(msgs){
+    // msgs is an array from .fetch()
+
+    var starttime = d3.min(msgs, function(d) { return d.starttime; });
+    var endtime = d3.max(msgs, function(d) { return d.endtime; });
+    var minCounts = d3.min(msgs, function(msg) {
+        return d3.min(getTraceData(msg));
+        });
+    var maxCounts = d3.min(msgs, function(msg) {
+        return d3.max(getTraceData(msg));
+    });
+
+    var margin = {top: 20, right: 20, bottom: 30, left: 50},
+        width = 960 - margin.left - margin.right,
+        height = 500 - margin.top - margin.bottom;
+
+    var xScale = d3.time.scale()
+        .domain([starttime, endtime])
+        .range([0, width]);
+
+    var yScale = d3.scale.linear()
+        .range([height, 0]);
+        yScale.domain([minCounts, maxCounts]);
+
+    var xAxis = d3.svg.axis()
+        .scale(xScale)
+        .orient("bottom");
+
+    var yAxis = d3.svg.axis()
+        .scale(yScale)
+        .orient("left");
+
+    traceLineGenr = d3.svg.line()
+        // d is the actual trace message
+        .x(function(d, i) { return xScale(indToDateScale(i))})
+        .y(function(d) { return yScale(d); });
+
+    d3svg = d3.select("#plot")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    d3svg.append("g")
+        .attr("class", "x axis")
+        .attr("transform", "translate(0," + height + ")")
+        .call(xAxis);
+
+    d3svg.append("g")
+        .attr("class", "y axis")
+        .call(yAxis)
+        .append("text")
+        .attr("transform", "rotate(-90)")
+        .attr("y", 6)
+        .attr("dy", ".71em")
+        .style("text-anchor", "end")
+        .text("Counts");
+
+    var trLinesGrp = d3svg.append("g")
+        .attr("class", "trLines")
+        .data([msgs])
+        .selectAll("path")
+        .data(function(d){return(d)})
+        .enter()
+        .append("path")
+        .attr("class", "traceLine")
+        .attr("d",traceLineGenr)
+
+
+    //traceLines.selectAll('.line')
+    //    .data(function(d) {return d})
+    //    .enter()
+    //    .attr("d",traceLineGenr)
+};
+
+plotMsg = function(msg){
+    msg.msgData = getTraceData(msg);
     var margin = {top: 20, right: 20, bottom: 30, left: 50},
         width = 960 - margin.left - margin.right,
         height = 500 - margin.top - margin.bottom;
@@ -64,7 +144,7 @@ plotTraceData = function(message){
     xScale = d3.time.scale()
         .range([0, width]);
 
-    indToDateScale = d3.time.scale().domain([0, message.nsamp]).range([message.starttime, message.endtime]);
+    indToDateScale = d3.time.scale().domain([0, msg.nsamp]).range([msg.starttime, msg.endtime]);
 
     var yScale = d3.scale.linear()
         .range([height, 0]);
@@ -78,7 +158,8 @@ plotTraceData = function(message){
         .orient("left");
 
     traceLineGenr = d3.svg.line()
-        .x(function(d, i) { return xScale(indToDateScale(i))})
+        //.x(function(d, i) { return xScale(indToDateScale(i))})
+        .x(function(d, i) { return xScale(i) })
         .y(function(d) { return yScale(d); });
 
     d3svg = d3.select("#plot")
@@ -87,8 +168,8 @@ plotTraceData = function(message){
         .append("g")
         .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-    xScale.domain([message.starttime, message.endtime]);
-    yScale.domain(d3.extent(messageData));
+    xScale.domain([msg.starttime, msg.endtime]);
+    yScale.domain(d3.extent(msg.msgData));
 
     d3svg.append("g")
         .attr("class", "x axis")
@@ -106,7 +187,7 @@ plotTraceData = function(message){
         .text("Price ($)");
 
     d3svg.append("path")
-        .datum(getTraceData(message))
+        .data([getTraceData(msg)])
         .attr("class", "line")
         .attr("d", traceLineGenr);
 }
