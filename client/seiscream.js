@@ -37,9 +37,6 @@ Template.msgPlot.destroyed = function(){
 Template.msgPlot.rendered = function() {
     Deps.autorun(function(){
     if (messageSub.ready()) {
-        //TODO this is not working
-        console.log('suppose the subscription is ready')
-        console.log(Messages.find({"chan": "BHZ"}).fetch())
         plotMsgs(Messages.find({"chan": "BHZ"}).fetch());
     }})
 };
@@ -130,19 +127,19 @@ plotMsgs = function(msgs){
     var trLinesGrp = d3svg.append("g")
         .attr("class", "trLines")
         .data([msgs])
-        .selectAll("path")
+        .selectAll("g")
         .data(function(d){return(d)})
         .enter()
-            .append("g")
-            .attr("class", "trace")
-            .data(function(d){console.log('the data is ' + d); return getTraceData(d.trace)})
-            .append("path")
-
-
+        .append("g")
+        .attr("class", "trace")
+        //.data(function(d){console.log('the data is ' + d); return getTraceData(d.trace)})
+        .append("path")
+        .datum(function(msg){return getTraceData(msg);})
+        .attr("d",d3.svg.line())
 
                 //.text(function(d){return getTraceData(d);})
                 //.attr("d",traceLineGenr);
-                .attr("d","M0,0L1,1");
+                //.attr("d","M0,0L1,1");
 
 
 
