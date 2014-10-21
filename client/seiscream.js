@@ -9,7 +9,8 @@ msgPlot = null;
 // of messages too, and trace should be reserved for referring to the data in a
 // tracebuf message.
 Messages = new Meteor.Collection("ew_traces");
-Meteor.subscribe('messages')
+var messageSub = Meteor.subscribe('messages');
+
 // counter starts at 0
 Session.setDefault("counter", 0);
 
@@ -34,12 +35,13 @@ Template.msgPlot.destroyed = function(){
 }
 
 Template.msgPlot.rendered = function() {
-    //TODO this is not working
-    msg = Messages.findOne({"chan": "BHZ"});
-    if (!!msg){
-        plotTraceData(msg);
-    }
-
+    Deps.autorun(function(){
+    if (messageSub.ready()) {
+        //TODO this is not working
+        console.log('suppose the subscription is ready')
+        console.log(Messages.find({"chan": "BHZ"}).fetch())
+        plotMsgs(Messages.find({"chan": "BHZ"}).fetch());
+    }})
 };
 
 getTraceData = function(message){
@@ -93,9 +95,16 @@ plotMsgs = function(msgs){
         .orient("left");
 
     traceLineGenr = d3.svg.line()
-        // d is the actual trace message
-        .x(function(d, i) { return xScale(indToDateScale(i))})
-        .y(function(d) { return yScale(d); });
+                .x(function(d, i){return xScale(i)})
+                .y(function(d){return yScale(d)});
+        //return d3.svg.line()
+        //    // d is the actual trace message
+        //    .x(function (d, i) {
+        //        return xScale(indToDateScale(i))
+        //    })
+        //    .y(function (d) {
+        //        return yScale(d);
+        //    });
 
     d3svg = d3.select("#plot")
         .attr("width", width + margin.left + margin.right)
@@ -124,73 +133,25 @@ plotMsgs = function(msgs){
         .selectAll("path")
         .data(function(d){return(d)})
         .enter()
-        .append("path")
-        .attr("class", "traceLine")
-        .attr("d",traceLineGenr)
+            .append("g")
+            .attr("class", "trace")
+            .data(function(d){console.log('the data is ' + d); return getTraceData(d.trace)})
+            .append("path")
+
+
+
+                //.text(function(d){return getTraceData(d);})
+                //.attr("d",traceLineGenr);
+                .attr("d","M0,0L1,1");
+
 
 
     //traceLines.selectAll('.line')
     //    .data(function(d) {return d})
     //    .enter()
     //    .attr("d",traceLineGenr)
-};
-
-plotMsg = function(msg){
-    msg.msgData = getTraceData(msg);
-    var margin = {top: 20, right: 20, bottom: 30, left: 50},
-        width = 960 - margin.left - margin.right,
-        height = 500 - margin.top - margin.bottom;
-
-    xScale = d3.time.scale()
-        .range([0, width]);
-
-    indToDateScale = d3.time.scale().domain([0, msg.nsamp]).range([msg.starttime, msg.endtime]);
-
-    var yScale = d3.scale.linear()
-        .range([height, 0]);
-
-    var xAxis = d3.svg.axis()
-        .scale(xScale)
-        .orient("bottom");
-
-    var yAxis = d3.svg.axis()
-        .scale(yScale)
-        .orient("left");
-
-    traceLineGenr = d3.svg.line()
-        //.x(function(d, i) { return xScale(indToDateScale(i))})
-        .x(function(d, i) { return xScale(i) })
-        .y(function(d) { return yScale(d); });
-
-    d3svg = d3.select("#plot")
-        .attr("width", width + margin.left + margin.right)
-        .attr("height", height + margin.top + margin.bottom)
-        .append("g")
-        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
-    xScale.domain([msg.starttime, msg.endtime]);
-    yScale.domain(d3.extent(msg.msgData));
-
-    d3svg.append("g")
-        .attr("class", "x axis")
-        .attr("transform", "translate(0," + height + ")")
-        .call(xAxis);
-
-    d3svg.append("g")
-        .attr("class", "y axis")
-        .call(yAxis)
-        .append("text")
-        .attr("transform", "rotate(-90)")
-        .attr("y", 6)
-        .attr("dy", ".71em")
-        .style("text-anchor", "end")
-        .text("Price ($)");
-
-    d3svg.append("path")
-        .data([getTraceData(msg)])
-        .attr("class", "line")
-        .attr("d", traceLineGenr);
 }
+
 
 UI.registerHelper('getTraceData', getTraceData);
 
