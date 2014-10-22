@@ -72,12 +72,14 @@ plotMsgs = function(msgs){
     });
 
     var margin = {top: 20, right: 20, bottom: 30, left: 50},
-        width = 960 - margin.left - margin.right,
-        height = 500 - margin.top - margin.bottom;
+        width = 660 - margin.left - margin.right,
+        height = 200 - margin.top - margin.bottom;
 
     var xScale = d3.time.scale()
         .domain([starttime, endtime])
         .range([0, width]);
+
+    var xScaleNoOffset = xScale.copy().domain([0,endtime-starttime])
 
     var yScale = d3.scale.linear()
         .range([height, 0]);
@@ -91,9 +93,6 @@ plotMsgs = function(msgs){
         .scale(yScale)
         .orient("left");
 
-    traceLineGenr = d3.svg.line()
-                .x(function(d, i){return xScale(i)})
-                .y(function(d){return yScale(d)});
         //return d3.svg.line()
         //    // d is the actual trace message
         //    .x(function (d, i) {
@@ -124,18 +123,30 @@ plotMsgs = function(msgs){
         .style("text-anchor", "end")
         .text("Counts");
 
+    var pixelsPerMillisecond = ((xScale.range()[1] - xScale.range()[0]) / (xScale.domain()[1] - xScale.domain()[0]))
+
+    var getTraceTransform = function(msg){
+        return "translate(" + xScale(msg.starttime) + ") scale(" +  1000 * pixelsPerMillisecond / msg.samprate + ", 1)"
+    }
+
     var trLinesGrp = d3svg.append("g")
         .attr("class", "trLines")
-        .data([msgs])
+        .datum(msgs)
         .selectAll("g")
         .data(function(d){return(d)})
         .enter()
         .append("g")
-        .attr("class", "trace")
-        //.data(function(d){console.log('the data is ' + d); return getTraceData(d.trace)})
+        .attr("class", "trace line")
+        // need to transform this g. Scale x by sample rate into JS date format, then by xScale. Then move to correct datetime.
+        .attr("transform",getTraceTransform)
         .append("path")
         .datum(function(msg){return getTraceData(msg);})
-        .attr("d",d3.svg.line())
+
+    trLinesGrp.attr("d",
+            d3.svg.line()
+                .x(function(d,i){return i;})
+                .y(function(d){return yScale(d);})
+            );
 
                 //.text(function(d){return getTraceData(d);})
                 //.attr("d",traceLineGenr);
