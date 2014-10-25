@@ -7,17 +7,17 @@ CFLAGS=${GLOBALFLAGS} $(pkg-config --cflags --libs libmongoc-1.0) -L/usr/local/l
 B = $(EW_HOME)/$(EW_VERSION)/bin
 L = $(EW_HOME)/$(EW_VERSION)/lib
 
-OBJS = helistream.o $L/libew.a $L/errexit.o
+OBJS = ew2mongo.o $L/libew.a $L/errexit.o
 
 sniffring: $(OBJS)
 	$(CC) $(CFLAGS) -o $B/sniffring2mongo $(OBJS)  $(SPECIFIC_FLAGS) -lbson-1.0 -lmongoc-1.0
 
 lint:
-	lint helistream.c $(GLOBALFLAGS)
+	lint ew2mongo.c $(GLOBALFLAGS)
 
 # Clean-up rules
 clean:
 	rm -f a.out core *.o *.obj *% *~
 
 clean_bin:
-	rm -f $B/helistream*
+	rm -f $B/ew2mongo*

@@ -20,13 +20,13 @@
 #
 
 
-#                    Nmake File For sniffring - Windows NT version
+#                    Nmake File For ew2mongo - Windows NT version
 #
 NODEBUG=1
 
 !include <ntwin32.mak>
 
-APP = sniffring
+APP = ew2mongo
 O = $(APP).obj
 
 B = $(EW_HOME)\$(EW_VERSION)\bin
@@ -40,12 +40,12 @@ $B\$(APP).exe: $O
 .c.obj:
    $(CC) $(GLOBALFLAGS)  /nologo $(cflags) $(cdebug) $(cvarsmt) $(tflags) $<
 
-sniffring: sniffring.obj
-        ilink $(LFLAGS) sniffring.obj libew.lib
+ew2mongo: ew2mongo.obj
+        ilink $(LFLAGS) ew2mongo.obj libew.lib
 
 # Clean-up directives
 clean:
 	-del a.out core *.o *.obj *% *~
 
 clean_bin:
-	-del $B\sniffring*
+	-del $B\ew2mongo*
