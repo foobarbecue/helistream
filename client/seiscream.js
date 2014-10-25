@@ -5,10 +5,10 @@ xScale=null;
 indToDateScale=null;
 var observeMsgs;
 msgPlot = null;
-// TODO rename traces collection to messages because we can deal with other types 
-// of messages too, and trace should be reserved for referring to the data in a
-// tracebuf message.
-Messages = new Meteor.Collection("ew_traces");
+/* TODO rename traces collection to messages because we can deal with other types
+ of messages too, and trace should be reserved for referring to the data in a
+ tracebuf message.*/
+Messages = new Meteor.Collection("ew_msgs");
 var messageSub = Meteor.subscribe('messages');
 
 // counter starts at 0
