@@ -1,23 +1,8 @@
-data=null;
-line=null;
-d3svg=null;
-xScale=null;
-indToDateScale=null;
-var observeMsgs;
-msgPlot = null;
-/* TODO rename traces collection to messages because we can deal with other types
- of messages too, and trace should be reserved for referring to the data in a
- tracebuf message.*/
 Messages = new Meteor.Collection("ew_msgs");
 var messageSub = Meteor.subscribe('messages');
-
-// counter starts at 0
-Session.setDefault("counter", 0);
+var observeMsgs;
 
 Template.messages.helpers({
-counter: function () {
-    return Session.get("counter")
-},
 messages: function () {
     return Messages.find()
 }
@@ -41,27 +26,25 @@ Template.msgPlot.rendered = function() {
     }})
 };
 
-getTraceData = function(message){
+getTraceData = function(msg){
     // tracebuf messages are really in signed Int32. We are storing them in mongo 
     // as a BinData field, which Meteor loads as a Uint8Array. The dtype field
     // says what the datatype is; might deal with other types in the future.
-    message = message || this;
-    if (message.dtype == "i4"){
-        traceDataView = new Int32Array(message.trace.buffer);
+    msg = msg || this;
+    if (msg.dtype == "i4"){
+        traceDataView = new Int32Array(msg.trace.buffer);
         // Convert to normal array for display. Hopefully won't have to do this for plotting.
         traceDataArray = Array.prototype.slice.call(traceDataView);
         return traceDataArray;
         };
 }
 
-extent = function(msgCursor){
-    // Given msgCursor, a cursor to a set of earthworm messages, returns the earliest startdate and latest enddate
-
+getTraceTransform = function(msg){
+    pixelsPerMillisecond = ((xScale.range()[1] - xScale.range()[0]) / (xScale.domain()[1] - xScale.domain()[0]))
+    return "translate(" + xScale(msg.starttime) + ") scale(" +  1000 * pixelsPerMillisecond / msg.samprate + ", 1)"
 }
 
 plotMsgs = function(msgs){
-    // msgs is an array from .fetch()
-
     var starttime = d3.min(msgs, function(d) { return d.starttime; });
     var endtime = d3.max(msgs, function(d) { return d.endtime; });
     var minCounts = d3.min(msgs, function(msg) {
@@ -123,12 +106,6 @@ plotMsgs = function(msgs){
         .style("text-anchor", "end")
         .text("Counts");
 
-    var pixelsPerMillisecond = ((xScale.range()[1] - xScale.range()[0]) / (xScale.domain()[1] - xScale.domain()[0]))
-
-    var getTraceTransform = function(msg){
-        return "translate(" + xScale(msg.starttime) + ") scale(" +  1000 * pixelsPerMillisecond / msg.samprate + ", 1)"
-    }
-
     var trLinesGrp = d3svg.append("g")
         .attr("class", "trLines")
         .datum(msgs)
@@ -137,7 +114,6 @@ plotMsgs = function(msgs){
         .enter()
         .append("g")
         .attr("class", "trace line")
-        // need to transform this g. Scale x by sample rate into JS date format, then by xScale. Then move to correct datetime.
         .attr("transform",getTraceTransform)
         .append("path")
         .datum(function(msg){return getTraceData(msg);})
@@ -147,17 +123,6 @@ plotMsgs = function(msgs){
                 .x(function(d,i){return i;})
                 .y(function(d){return yScale(d);})
             );
-
-                //.text(function(d){return getTraceData(d);})
-                //.attr("d",traceLineGenr);
-                //.attr("d","M0,0L1,1");
-
-
-
-    //traceLines.selectAll('.line')
-    //    .data(function(d) {return d})
-    //    .enter()
-    //    .attr("d",traceLineGenr)
 }
 
 
