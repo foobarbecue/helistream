@@ -74,7 +74,7 @@ getDataExtents = function(msgs){
     var maxCounts = d3.min(msgs, function(msg) {
         return d3.max(getTraceData(msg));
     });
-    return {xMin:startime, xMax:endtime, yMin:minCounts, yMax:maxCounts}
+    return {xMin:starttime, xMax:endtime, yMin:minCounts, yMax:maxCounts}
 }
 
 setAxesBounds = function(bounds){
@@ -87,13 +87,14 @@ setAxesBounds = function(bounds){
 }
 
 plotUpdate = function(subPlot, msgs){
+    setAxesBounds(getDataExtents(msgs));
     // Bind the new data and build child elements
     subPlot.datum(msgs)
         .selectAll("g")
         .data(function(d){return(d)})
         .enter()
         .append("g")
-        .attr("class", "trace msg")
+        .attr("class", "trace msg line")
         .attr("transform",getTraceTransform)
         .append("path")
         .datum(
@@ -113,7 +114,7 @@ plotUpdate = function(subPlot, msgs){
     d3.select(".x.axis").call(xAxis);
     d3.select(".y.axis").call(yAxis);*/
 
-    setAxesBounds(getDataExtents(msgs));
+
 }
 
 
