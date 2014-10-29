@@ -9,13 +9,13 @@ messages: function () {
 }
 });
 
-//observeMsgs = Messages.find().observe({
-//    added: function (document) {
-//        d3.selectAll("g .trLines").data()
-//         msgPlot.series[0].data.push(document);
-////         msgPlot.render();
-//    }
-//})
+/*observeMsgs = Messages.find().observe({
+    added: function (document) {
+        d3.selectAll("g .trLines").data()
+         msgPlot.series[0].data.push(document);
+//         msgPlot.render();
+    }
+})*/
     
 Template.msgPlot.destroyed = function(){
     if(observeMsgs) Observe.stop();
@@ -91,15 +91,17 @@ plotUpdate = function(subPlot, msgs){
     // Bind the new data and build child elements
     subPlot.datum(msgs)
         .selectAll("g")
-        .data(function(d){return(d)})
+        .data(function(d){return(d)}, function(d){return(d._id)})
         .enter()
         .append("g")
         .attr("class", "trace msg line")
-        .attr("transform",getTraceTransform)
         .append("path")
         .datum(
         function(msg){return getTraceData(msg)},
         function(msg){return msg._id});
+
+    subPlot.selectAll("g")
+        .attr("transform",getTraceTransform)
 
     // Draw the lines
     subPlot.selectAll("path")
@@ -118,22 +120,23 @@ plotUpdate = function(subPlot, msgs){
 }
 
 
-Template.msgPlot.rendered = function() {
-    Deps.autorun(function(){
+Deps.autorun(function(){
     if (messageSub.ready()) {
         if (!plotInitialized) {
-            var plot = d3.select("#plot")
+
+            var plotContainer = d3.select("#plot")
                 .attr("width", width + margin.left + margin.right)
                 .attr("height", height + margin.top + margin.bottom)
                 .append("g")
-                .attr("transform", "translate(50,20)");
+                .attr("transform", "translate(50,20)")
+                .attr("class","plotContainer")
 
-            plot.append("g")
+            plotContainer.append("g")
                 .attr("class", "x axis")
                 .attr("transform", "translate(0," + height + ")")
                 .call(xAxis);
 
-            plot.append("g")
+            plotContainer.append("g")
                 .attr("class", "y axis")
                 .call(yAxis)
                 .append("text")
@@ -143,14 +146,17 @@ Template.msgPlot.rendered = function() {
                 .style("text-anchor", "end")
                 .text("Counts");
 
+            plotContainer.append("g")
+                .attr("class", "subplot")
+
             plotInitialized = true;
         }
-        var subPlot = plot.append("g")
-            .attr("class", "trLines")
+        var subPlot = d3.select("#plot .plotContainer .subplot")
 
-        plotUpdate(subPlot, Messages.find({"chan": "BHZ"}).fetch());
-    }})
-};
+        plotUpdate(subPlot, Messages.find({'chan':'BHZ','sta':'CON','msgmod':/SCREAM2EW.*/}).fetch())
+    }
+});
+
 
 
 
