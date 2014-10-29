@@ -35,9 +35,25 @@ var xScale = d3.time.scale()
 
 var xScaleNoOffset = xScale.copy().domain([0,now - duration, now])
 
+var scaleToSlopeIntercept = function(scale){
+        slope = (scale.range()[1] - scale.range()[0]) / (scale.domain()[1] - scale.domain()[0]);
+        intercept = scale.range()[0] - slope*scale.domain()[0]
+        return {'slope': slope, 'intercept': intercept}
+    }
+
 var getTraceTransform = function(msg){
-    pixelsPerMillisecond = ((xScale.range()[1] - xScale.range()[0]) / (xScale.domain()[1] - xScale.domain()[0]))
-    return "translate(" + xScale(msg.starttime) + ") scale(" +  1000 * pixelsPerMillisecond / msg.samprate + ", 1)"
+    xScaleParams = scaleToSlopeIntercept(xScale);
+    yScaleParams = scaleToSlopeIntercept(yScale);
+    pixelsPerMillisecond = xScaleParams['slope'];
+    var sampRateXscale = 1000 * pixelsPerMillisecond / msg.samprate;
+    // TODO this is horrible, find an elegant way.
+    return "translate("
+        + xScale(msg.starttime)
+        + "," + yScaleParams['intercept']
+        + ") scale("
+        + sampRateXscale
+        + "," + yScaleParams['slope']
+        + ")";
 }
 
 var yScale = d3.scale.linear()
@@ -108,7 +124,7 @@ plotUpdate = function(subPlot, msgs){
         .attr("d",
         d3.svg.line()
             .x(function(d,i){return i;})
-            .y(function(d){return yScale(d);})
+            .y(function(d){return d;})
     );
 
     // Update the x axis
