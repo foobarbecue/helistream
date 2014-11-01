@@ -14,8 +14,12 @@ body {
     display: none;
 }
 
-.line {
+.line path{
     fill: none;
     stroke: steelblue;
     stroke-width: 5px;
+}
+
+.subplot {
+    clip-path: url(#clip);
 }

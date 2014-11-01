@@ -1,5 +1,7 @@
+Session.set('duration',100000)
+var overall_starttime = new Date(new Date() - Session.get('duration'))
 Messages = new Meteor.Collection("ew_msgs");
-var messageSub = Meteor.subscribe('messages');
+var messageSub = Meteor.subscribe('ew_msgs', overall_starttime);
 var observeMsgs;
 var plotInitialized = false;
 
@@ -26,14 +28,14 @@ var now = new Date();
 var margin = {top: 20, right: 20, bottom: 30, left: 50},
     width = 660 - margin.left - margin.right,
     height = 200 - margin.top - margin.bottom;
-
-var duration = 100000;
-
+var plotQuery = function(){
+    return{'chan': 'BHZ', 'sta': 'CON', 'msgmod': /SCREAM2EW.*/}
+};
 var xScale = d3.time.scale()
-    .domain([now - duration, now])
+    .domain([now - Session.get('duration'), now])
     .range([0, width]);
 
-var xScaleNoOffset = xScale.copy().domain([0,now - duration, now])
+var xScaleNoOffset = xScale.copy().domain([0,now - Session.get('duration'), now])
 
 var scaleToSlopeIntercept = function(scale){
         slope = (scale.range()[1] - scale.range()[0]) / (scale.domain()[1] - scale.domain()[0]);
@@ -87,7 +89,7 @@ getDataExtents = function(msgs){
     var minCounts = d3.min(msgs, function(msg) {
         return d3.min(getTraceData(msg));
     });
-    var maxCounts = d3.min(msgs, function(msg) {
+    var maxCounts = d3.max(msgs, function(msg) {
         return d3.max(getTraceData(msg));
     });
     return {xMin:starttime, xMax:endtime, yMin:minCounts, yMax:maxCounts}
@@ -103,7 +105,10 @@ setAxesBounds = function(bounds){
 }
 
 plotUpdate = function(subPlot, msgs){
-    setAxesBounds(getDataExtents(msgs));
+    newExtents = getDataExtents(msgs);
+    newExtents['xMin'] = new Date() - Session.get('duration');
+    setAxesBounds(newExtents);
+
     // Bind the new data and build child elements
     subPlot.datum(msgs)
         .selectAll("g")
@@ -137,7 +142,7 @@ plotUpdate = function(subPlot, msgs){
 
 
 Deps.autorun(function(){
-    if (messageSub.ready()) {
+    if (!!messageSub.ready()) {
         if (!plotInitialized) {
 
             var plotContainer = d3.select("#plot")
@@ -145,7 +150,7 @@ Deps.autorun(function(){
                 .attr("height", height + margin.top + margin.bottom)
                 .append("g")
                 .attr("transform", "translate(50,20)")
-                .attr("class","plotContainer")
+                .attr("class", "plotContainer");
 
             plotContainer.append("g")
                 .attr("class", "x axis")
@@ -163,13 +168,19 @@ Deps.autorun(function(){
                 .text("Counts");
 
             plotContainer.append("g")
-                .attr("class", "subplot")
+                .attr("class", "subplot");
 
             plotInitialized = true;
         }
-        var subPlot = d3.select("#plot .plotContainer .subplot")
 
-        plotUpdate(subPlot, Messages.find({'chan':'BHZ','sta':'CON','msgmod':/SCREAM2EW.*/}).fetch())
+        var subPlot = d3.select("#plot .plotContainer .subplot")
+        subPlot.append("defs").append("svg:clipPath")
+            .attr("id","clip")
+            .append("rect")
+            .attr("width", 400)
+            .attr("height", 200);
+
+        plotUpdate(subPlot, Messages.find(plotQuery()).fetch())
     }
 });
 
